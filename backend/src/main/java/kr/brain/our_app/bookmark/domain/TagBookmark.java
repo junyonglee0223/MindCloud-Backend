@@ -37,9 +37,6 @@ public class TagBookmark implements Serializable {
     @JoinColumn(name = "bookmark_id")
     private Bookmark bookmark;
 
-//    protected TagBookmark() {
-//        //기본생성자
-//    }
 
     public TagBookmark(final Tag tag, final Bookmark bookmark) {
         this.tag = tag;

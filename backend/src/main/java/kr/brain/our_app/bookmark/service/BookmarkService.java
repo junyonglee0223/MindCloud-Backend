@@ -37,8 +37,12 @@ public class BookmarkService {
                 .email(findUserDto.getEmail())
                 .build();
 
-        String createbookmarkId = IDGenerator.generateId(bookmarkDto.getBookmarkName());
+        String createbookmarkId = IDGenerator.generateId(bookmarkDto.getBookmarkName()+user.getId());
         //user 객체를 전달해서 setUser(user) 전달x
+
+        if(existsById(createbookmarkId)) {
+            throw new IllegalArgumentException("Bookmark already exists");
+        }
 
         Bookmark bookmark = Bookmark.builder()
                 .id(createbookmarkId)
@@ -58,16 +62,22 @@ public class BookmarkService {
 
     // 2. 북마크 전체 조회
     public List<BookmarkDto> findAllBookmarks(UserDto userDto) {
-        return bookmarkRepository.findAllByUser_Id(userDto.getId())
-                .stream()
+        List<Bookmark> bookmarks = bookmarkRepository.findAllByUser_Id(userDto.getId());
+
+        if (bookmarks.isEmpty()) {
+            throw new IllegalArgumentException("해당 사용자는 북마크를 가지고 있지 않습니다.");
+        }
+
+        return bookmarks.stream()
                 .map(bookmark -> BookmarkDto.builder()
                         .id(bookmark.getId())
                         .bookmarkName(bookmark.getBookmarkName())
                         .url(bookmark.getUrl())
                         .build())
                 .collect(Collectors.toList());
-
     }
+    //2번과 3번은 일부러 예외처리 방식을 다르게 했는데, 2는 좀더 명확한 예외상황을 볼 수있다는 장점이 있고
+    //3번은 만들기 좀 더 쉽다는 장점이 있다. 한번 의논해보고 예외처리 방식을 통일하면 좋을 것 같다.
 
     // 3. 이름으로 북마크 찾기
     public BookmarkDto findByBookmarkName(String bookmarkName, UserDto userDto) {
@@ -80,7 +90,7 @@ public class BookmarkService {
                 .orElseThrow(() -> new IllegalArgumentException("해당 사용자의 bookmarkName을 가진 bookmark가 존재하지 않습니다: " + bookmarkName));
     }
 
-    //  북마크 삭제
+    // 4. 북마크 삭제
     public void deleteBookmark(String bookmarkId) {
         // 1. Bookmark ID로 객체 조회
         Bookmark bookmark = bookmarkRepository.findById(bookmarkId)

@@ -32,7 +32,6 @@ public class TagBookmarkService {
     private final TagService tagService;
     private final UserService userService;
 
-
     @Autowired
     public TagBookmarkService(TagBookmarkRepository tagBookmarkRepository,
                               BookmarkService bookmarkService,
@@ -49,6 +48,8 @@ public class TagBookmarkService {
         this.userService = userService;
     }
 
+    //WARN User 생성되는게 어디서 생성되는지 아직 몰라서 tagbookmark 컨트롤러에서 user 생성하는 걸로 두긴했는데,
+    //WARN 정확하게 어디서 생성되는지, 로직을 수정해야하는지 등을
 
     public List<TagBookmarkDto> requestTagBookmark(RequestFrontDto requestFrontDto){
         System.out.println(requestFrontDto);    //TEST
@@ -152,6 +153,11 @@ public class TagBookmarkService {
         // 1. dto에 user_id를 추가해서 통일성을 맞춘다.   -> 통일성 맞춤
         // 2. tagbookmark 생성시 userDto를 지속적으로 입력한다. -> 전체 refactoring 필요
         // 3. create 하는 부분에서만 user entity 필요함 find 영역에서는 필요없음
+        // 4. id가 들어오는지 name인지 모르긴 하지만 일단 id로 두는걸로
+
+        if (tagBookmarkRepository.existsByTagIdAndBookmarkId(tagId, bookmarkId)) {
+            throw new IllegalArgumentException("This TagBookmark already exists with tagId: " + tagId + " and bookmarkId: " + bookmarkId);
+        }
         UserDto currentUserDto = userService.findById(userId);
 
         User user = User.builder()
@@ -160,14 +166,8 @@ public class TagBookmarkService {
                 .email(currentUserDto.getEmail())
                 .build();
 
-
-        //TODO 이미 존재하면 예외처리
-        String createTagBookmarkId
-                = IDGenerator.generateId(tagId + bookmarkId);
-        //TODO 새로 생성해야 함
         TagDto tagDto = tagService.findById(tagId);
-        //TODO user entity를 입력해 줘야 하는 문제 있음
-        //FIXME user 임시 추가
+        //TODO user entity를 입력해 줘야 하는 문제 있음(반복적인 코드)
         Tag tag = Tag.builder()
                 .id(tagDto.getId())
                 .tagName(tagDto.getTagName())
@@ -176,8 +176,7 @@ public class TagBookmarkService {
 
         //TODO set 설정 관련 문제 해결해야 함
         BookmarkDto bookmarkDto = bookmarkService.findBookmarkById(bookmarkId);
-        //TODO user entity를 입력해 주야 하는 문제 있음
-        //FIXME user 임시 추가
+
         Bookmark bookmark = Bookmark.builder()
                 .id(bookmarkDto.getId())
                 .bookmarkName(bookmarkDto.getBookmarkName())
@@ -185,11 +184,15 @@ public class TagBookmarkService {
                 .user(user)
                 .build();
 
+        String createTagBookmarkId
+                = IDGenerator.generateId(tagId + bookmarkId);
+
+
+        // 새로 tagbookmark 객체 생성
         TagBookmark tagBookmark = TagBookmark.builder()
                 .id(createTagBookmarkId)
                 .tag(tag)
                 .bookmark(bookmark).build();
-
 
         TagBookmark savedTagBookmark = tagBookmarkRepository.save(tagBookmark);
 
@@ -199,7 +202,6 @@ public class TagBookmarkService {
                 .build();
     }
 
-    //FIXME userId로 처리하는 부분 refactoring 필요
     List<TagBookmarkDto> findByTagId(String tagId){
         return tagBookmarkRepository.findByTagId(tagId).stream()
                 .map(tagBookmark -> TagBookmarkDto.builder()
@@ -213,23 +215,15 @@ public class TagBookmarkService {
         return tagBookmarkRepository.existsByTagIdAndBookmarkId(tagId, bookmarkId);
     }
 
-    // "검색" 창에서, bookmark name이 들어올 경우 해당 bookmark를 찾아서 dto를 반환하는 함수
-    // 이 함수를 굳이 만들 필요가 있을까?? bookmark메서드에 있는걸 쓰면 안되나?? 이생각이 자꾸드네
-    // 일단 bookmarkservice에 있는걸 가져와서 사용하는 걸로 만듦
-
     //FIXME 리턴 방식 다시 생각해봐야함
     public BookmarkDto searchBookmarkByBookmarkName(String bookmarkName , String userId) {
-        // 사용자가 검색란에 bookmarkname을 입력, bookmarkdto 반환front에서 userId를 쏴주었다고 가정하고 작성
-        if(bookmarkService.existsByBookmarkName(bookmarkName,userId)){
-            UserDto currentUserDto = userService.findById(userId);
-            BookmarkDto bookmarkDto = bookmarkService.findByBookmarkName(bookmarkName,currentUserDto);
-            return bookmarkDto;
+        // 사용자가 검색란에 bookmarkname을 입력, bookmarkdto 반환front에서 userId를 쏴준 상황
+        if(!bookmarkService.existsByBookmarkName(bookmarkName,userId)){
+            throw new IllegalArgumentException("Bookmark does not exist");
         }
-        else{
-            //여기서 해당하는 bookmark가 없으면 그냥 빈 칸으로 내보내고 싶은데, null 로 내보내도 되나?
-            //null이 오면 에러처리를 하는 로직이 프론트에 필요한데, 없을 수도 있으니까 빈객체를 반환하게 한다
-            return BookmarkDto.builder().bookmarkName("").url("").build();
-        }
+        UserDto currentUserDto = userService.findById(userId);
+        BookmarkDto bookmarkDto = bookmarkService.findByBookmarkName(bookmarkName,currentUserDto);
+        return bookmarkDto;
     }
 
     // TagName을 입력받고 해당 tag에 속하는 bookmark들을 모두 출력하는 메서드
