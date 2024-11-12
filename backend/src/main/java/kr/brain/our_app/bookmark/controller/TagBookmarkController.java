@@ -53,16 +53,16 @@ public class TagBookmarkController {
     }
 
     @GetMapping("/out")
-    public ResponseEntity<StringBuilder> responseTagBookmark(@RequestParam String tagName
-    , @RequestParam String userEmail){
-        StringBuilder ret = new StringBuilder();
+    public ResponseEntity<List<BookmarkDto>> responseTagBookmark(@RequestParam String tagName
+            , @RequestParam String userEmail){
+        System.out.println("Received tagName: " + tagName);  //test
+        System.out.println("Received userEmail: " + userEmail);  //test
+
         List<BookmarkDto>bookmarkDtos = tagBookmarkService.responseTagBookmark(tagName, userEmail);
-        for(BookmarkDto bmd : bookmarkDtos){
-            ret.append(bmd.getBookmarkName());
-        }
-        //FIXME string 형식의 entity로 넘겨주는 방식으로 구현
+        System.out.println("Returning bookmarks: " + bookmarkDtos);  // test
+
         //TODO 반환 방식에 대한 회의 필요 tag -> bookmarkName or bookmarkURL or show all of them
-        return ResponseEntity.ok(ret);
+        return ResponseEntity.ok(bookmarkDtos);
     }
 
     // 1. TagBookmark 생성
@@ -95,7 +95,7 @@ public class TagBookmarkController {
 
     //TODO 지금 userdto추가하면서 @RequestBody로 받는다고 가정하고, findByTagName으로 만들었다.
 
- /*************************************************************************************/
+    /*************************************************************************************/
 //    private final TagRepository tagRepository;
 //    private final BookmarkRepository bookmarkRepository;
 //

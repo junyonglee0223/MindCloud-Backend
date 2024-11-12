@@ -1,7 +1,10 @@
 package kr.brain.our_app.bookmark.controller;
 
+import jakarta.transaction.Transactional;
 import kr.brain.our_app.bookmark.domain.Bookmark;
 import kr.brain.our_app.bookmark.domain.TagBookmark;
+import kr.brain.our_app.bookmark.dto.BookmarkDto;
+import kr.brain.our_app.bookmark.dto.RequestFrontDto;
 import kr.brain.our_app.bookmark.service.TagBookmarkService;
 import kr.brain.our_app.tag.domain.Tag;
 import kr.brain.our_app.tag.repository.TagRepository;
@@ -9,61 +12,118 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.hamcrest.Matchers.containsString;
 
-@WebMvcTest(TagBookmarkController.class)
-public class TagBookmarkControllerTest {
 
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
+public class TagBookmarkControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @Autowired
     private TagBookmarkService tagBookmarkService;
 
-    @MockBean
-    private TagRepository tagRepository;
-
-    private Tag tag;
-    private Bookmark bookmark;
-    private TagBookmark tagBookmark;
+    private RequestFrontDto requestFrontDto;
 
     @BeforeEach
-    public void setup() {
-        MockitoAnnotations.openMocks(this);
+    void setUp() {
+        // 테스트 데이터 초기화
+        requestFrontDto = RequestFrontDto.builder()
+                .title("Sample Bookmark")
+                .url("http://sample.com")
+                .tags(Arrays.asList("SampleTag1", "SampleTag2"))
+                .userName("testUser")
+                .email("testuser@example.com")
+                .build();
+        tagBookmarkService.requestTagBookmark(requestFrontDto);
+    }
+    @Test
+    void testResponseTagBookmark() throws Exception {
+        //request 2 setting
+        RequestFrontDto requestFrontDto2 = RequestFrontDto.builder()
+                .title("Sample Bookmark2")
+                .url("http://sample2.com")
+                .tags(Arrays.asList("SampleTag1", "SampleTag3"))
+                .userName("testUser")
+                .email("testuser@example.com")
+                .build();
+        tagBookmarkService.requestTagBookmark(requestFrontDto2);
 
-        tag = new Tag();
-        tag.setId("1L");
-        tag.setTagName("Technology");
+        // Given: 요청할 태그와 사용자 이메일
+        String tagName = "SampleTag1";
+        String userEmail = "testuser@example.com";
 
+        // When: GET 요청 실행
+        MvcResult result = mockMvc.perform(get("/api/tagbookmark/out")
+                        .param("tagName", tagName)
+                        .param("userEmail", userEmail))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn();
 
-        bookmark = new Bookmark();
-        bookmark.setId("1L");
-        bookmark.setUrl("http://example.com");
+        // Then: 응답 데이터 검증
+        String responseContent = result.getResponse().getContentAsString();
+        System.out.println("GET Response: " + responseContent);
 
-        tagBookmark = new TagBookmark(tag, bookmark);
+        //assertThat(responseContent).contains("Sample Bookmark");
+    }
+
+    @Test
+    void testCreateTagBookmarksFromRequest() throws Exception {
+        // JSON 요청 데이터
+        String jsonRequest = """
+                {
+                    "title": "Sample Bookmark",
+                    "url": "http://sample.com",
+                    "tags": ["SampleTag1", "SampleTag2"],
+                    "userName": "testUser",
+                    "email": "testuser@example.com"
+                }
+                """;
+
+        // When: POST 요청 실행
+        MvcResult result = mockMvc.perform(post("/api/tagbookmark/in")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // Then: 응답 데이터 검증
+        String responseContent = result.getResponse().getContentAsString();
+        assertThat(responseContent).isNotEmpty();
+        System.out.println("POST Response: " + responseContent);
     }
 
     @Test
     public void testCreateTagBookmarkByRequestParam()throws Exception{
-        mockMvc.perform(post("/api/tagbookmark")
+        mockMvc.perform(post("/api/tagbookmark/in")
                 .param("bookmarkName", "test1")
                 .param("bookmarkUrl", "https://testGoogle.com")
                 .contentType(MediaType.APPLICATION_JSON)
