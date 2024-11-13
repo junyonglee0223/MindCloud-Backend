@@ -1,24 +1,15 @@
-
 package kr.brain.our_app.bookmark.controller;
 
-import kr.brain.our_app.bookmark.domain.Bookmark;
-import kr.brain.our_app.bookmark.domain.TagBookmark;
+
 import kr.brain.our_app.bookmark.dto.BookmarkDto;
 import kr.brain.our_app.bookmark.dto.RequestFrontDto;
 import kr.brain.our_app.bookmark.dto.TagBookmarkDto;
-import kr.brain.our_app.bookmark.repository.BookmarkRepository;
 import kr.brain.our_app.bookmark.service.BookmarkService;
 import kr.brain.our_app.bookmark.service.TagBookmarkService;
-import kr.brain.our_app.tag.domain.Tag;
-import kr.brain.our_app.tag.dto.TagDto;
-import kr.brain.our_app.tag.repository.TagRepository;
 import kr.brain.our_app.tag.service.TagService;
-import kr.brain.our_app.user.dto.UserDto;
 import kr.brain.our_app.user.service.UserService;
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,7 +29,7 @@ public class TagBookmarkController {
     @Autowired
     public TagBookmarkController(TagBookmarkService tagBookmarkService, TagService tagService
             , BookmarkService bookmarkService
-            , UserService userService){
+            , UserService userService) {
         this.tagBookmarkService = tagBookmarkService;
         this.bookmarkService = bookmarkService;
         this.tagService = tagService;
@@ -47,18 +38,18 @@ public class TagBookmarkController {
 
     //0. front에서 request 받고 처리하는 부분
     @PostMapping("/in")
-    public ResponseEntity<List<TagBookmarkDto>> createTagBookmarksFromRequest(@RequestBody RequestFrontDto requestFrontDto){
+    public ResponseEntity<List<TagBookmarkDto>> createTagBookmarksFromRequest(@RequestBody RequestFrontDto requestFrontDto) {
         List<TagBookmarkDto> tagBookmarkDtos = tagBookmarkService.requestTagBookmark(requestFrontDto);
         return ResponseEntity.ok(tagBookmarkDtos);
     }
 
     @GetMapping("/out")
     public ResponseEntity<List<BookmarkDto>> responseTagBookmark(@RequestParam String tagName
-            , @RequestParam String userEmail){
+            , @RequestParam String userEmail) {
         System.out.println("Received tagName: " + tagName);  //test
         System.out.println("Received userEmail: " + userEmail);  //test
 
-        List<BookmarkDto>bookmarkDtos = tagBookmarkService.responseTagBookmark(tagName, userEmail);
+        List<BookmarkDto> bookmarkDtos = tagBookmarkService.responseTagBookmark(tagName, userEmail);
         System.out.println("Returning bookmarks: " + bookmarkDtos);  // test
 
         //TODO 반환 방식에 대한 회의 필요 tag -> bookmarkName or bookmarkURL or show all of them
@@ -124,22 +115,22 @@ public class TagBookmarkController {
 //        return ResponseEntity.ok(bookmarks);
 //    }
 //
-//    // 3. 태그와 북마크의 결합 삭제 -> 일부 북마크에서
-//    @DeleteMapping
-//    public ResponseEntity<Void> removeTagBookmark(@RequestParam Long tagId, @RequestBody Bookmark bookmark) {
-//        Tag tag = tagRepository.findById(tagId).orElseThrow(() ->
-//                new IllegalArgumentException("해당 ID의 태그를 찾을 수 없습니다."));
-//        tagBookmarkService.removeTagBookmark(tag, bookmark);
-//        return ResponseEntity.noContent().build();
-//    }
+//    // 3. 태그 삭제시 tag삭제 + 연결된 tagbookmark 모두 삭제
+    // 태그삭제는 아직 고려사항이 아니기에, 북마크 삭제만 고안함
+//    @DeleteMapping("/{tagId}")
+//    public ResponseEntity<Void> deleteTag(@PathVariable String tagId){
+//        tagService.
 //
-//    // 4. 특정 태그와 관련된 모든 결합 삭제 -> 태그 삭제 시 결합 모두 삭제, 이거 태그에서 구현 해야함
-//    // 근데 아직은 구현 안 함
-//    @DeleteMapping("/{tagId}/all-bookmarks")
-//    public ResponseEntity<Void> deleteAllTagBookmarks(@PathVariable Long tagId) {
-//        tagBookmarkService.deleteAllByTagId(tagId);
-//        return ResponseEntity.noContent().build();
 //    }
+
+    // 4. bookmark 삭제 + 연결된 tagbookmark 모두 삭제
+    @DeleteMapping("/{bookmarkId}")
+    public ResponseEntity<Void> deleteBookmark(@PathVariable String BookmarkId) {
+        bookmarkService.deleteBookmark(BookmarkId);
+        return ResponseEntity.noContent().build();
+        //위의 return은 delete 시에 주로 사용되는 204 no content로, 삭제한 정보를 다시 업데이트 할 필요가없을때
+        //주로 사용된다.
+    }
 
 /*******************************************************************************************/
 

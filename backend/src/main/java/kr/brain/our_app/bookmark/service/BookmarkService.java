@@ -4,7 +4,6 @@ import kr.brain.our_app.bookmark.domain.Bookmark;
 import kr.brain.our_app.bookmark.dto.BookmarkDto;
 import kr.brain.our_app.bookmark.repository.BookmarkRepository;
 import kr.brain.our_app.idsha.IDGenerator;
-import kr.brain.our_app.tag.dto.TagDto;
 import kr.brain.our_app.user.domain.User;
 import kr.brain.our_app.user.dto.UserDto;
 import kr.brain.our_app.user.service.UserService;
@@ -92,11 +91,9 @@ public class BookmarkService {
 
     // 4. 북마크 삭제
     public void deleteBookmark(String bookmarkId) {
-        // 1. Bookmark ID로 객체 조회
         Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID를 가진 Bookmark가 존재하지 않습니다."));
 
-        // 2. Bookmark 객체 삭제
         bookmarkRepository.delete(bookmark);
     }
 
