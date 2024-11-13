@@ -211,6 +211,15 @@ public class TagBookmarkService {
                 .collect(Collectors.toList());
     }
 
+    List<TagBookmarkDto> findByBookmarkId(String bookmarkId){
+        return tagBookmarkRepository.findByBookmarkId(bookmarkId).stream()
+                .map(tagBookmark -> TagBookmarkDto.builder()
+                        .tagId(tagBookmark.getTag().getId())
+                        .bookmarkId(tagBookmark.getBookmark().getId())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     public boolean existsByTagIdAndBookmarkId(String tagId, String bookmarkId){
         return tagBookmarkRepository.existsByTagIdAndBookmarkId(tagId, bookmarkId);
     }
