@@ -22,11 +22,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/tagbookmark")
-@CrossOrigin(origins = "chrome-extension://jdceomhmccgnolblojlknlhopaoikoda")  // Chrome 확장 프로그램의 origin 추가
+@CrossOrigin(origins = "chrome-extension://fobkchapnlendiediceimjfimlphdkin")  // Chrome 확장 프로그램의 origin 추가
 public class TagBookmarkController {
 
     private final TagBookmarkService tagBookmarkService;
@@ -50,6 +54,37 @@ public class TagBookmarkController {
     public ResponseEntity<List<TagBookmarkDto>> createTagBookmarksFromRequest(@RequestBody RequestFrontDto requestFrontDto){
         List<TagBookmarkDto> tagBookmarkDtos = tagBookmarkService.requestTagBookmark(requestFrontDto);
         return ResponseEntity.ok(tagBookmarkDtos);
+    }
+
+    @GetMapping("/outAll")
+    public ResponseEntity<List<RequestFrontDto>> sendTagBookmarksFromRequest(@RequestParam String userEmail) {
+        // 사용자 조회 (예외 처리는 추후 추가 필요)
+        UserDto userDto = userService.findByEmail(userEmail);
+        String userId = userDto.getId();
+
+        // 북마크 목록 조회
+        List<BookmarkDto> bookmarks = bookmarkService.findAllBookmarks(userDto);
+
+        // 태그 조회 및 DTO 생성
+        List<RequestFrontDto> responseDtos = bookmarks.stream()
+                .map(bookmark -> {
+                    // 각 북마크에 연결된 태그 조회
+                    List<String> tags = tagBookmarkService.findTagsByBookmarkName(bookmark.getBookmarkName(), userId).stream()
+                            .map(TagDto::getTagName)
+                            .collect(Collectors.toList());
+
+                    // RequestFrontDto 생성
+                    return RequestFrontDto.builder()
+                            .title(bookmark.getBookmarkName())
+                            .url(bookmark.getUrl())
+                            .tags(tags)
+                            .email(userEmail)
+                            .userName(userDto.getUserName())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responseDtos);
     }
 
     @GetMapping("/out")
