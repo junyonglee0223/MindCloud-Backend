@@ -235,6 +235,30 @@ public class TagBookmarkService {
         return bookmarkDto;
     }
 
+    public List<TagDto> findTagsByBookmarkName(String bookmarkName, String userId) {
+        if (bookmarkService.existsByBookmarkName(bookmarkName, userId)) {
+            UserDto userDto = userService.findById(userId);
+            BookmarkDto bookmarkDto = bookmarkService.findByBookmarkName(bookmarkName, userDto);
+
+            List<TagBookmarkDto> tagBookmarkDtos = tagBookmarkRepository.findByBookmarkId(bookmarkDto.getId())
+                    .stream()
+                    .map(tagBookmark -> TagBookmarkDto.builder()
+                            .bookmarkId(tagBookmark.getBookmark().getId()) // 올바른 bookmarkId
+                            .tagId(tagBookmark.getTag().getId()) // 올바른 tagId
+                            .build())
+                    .toList();
+
+            List<TagDto> tagDtos = new ArrayList<>();
+            for (TagBookmarkDto tbd : tagBookmarkDtos) {
+                tagDtos.add(tagService.findById(tbd.getTagId())); // 정확한 TagDto 조회
+            }
+            return tagDtos;
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
+
     // TagName을 입력받고 해당 tag에 속하는 bookmark들을 모두 출력하는 메서드
     public List<BookmarkDto> findBookmarksByTagName(String tagName, String userId) {
         if (tagService.existsByTagName(tagName, userId)) { // Tag가 존재하는지 확인
@@ -263,7 +287,6 @@ public class TagBookmarkService {
             return Collections.emptyList();
         }
     }
-
 
 //    public List<TagBookmarkDto> findAllByTag(TagDto tagDto) {
 //        // TagDto의 정보를 바탕으로 Tag 엔티티 조회
