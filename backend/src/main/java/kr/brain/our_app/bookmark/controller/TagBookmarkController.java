@@ -1,12 +1,14 @@
 package kr.brain.our_app.bookmark.controller;
 
 
+import kr.brain.our_app.bookmark.domain.TagBookmark;
 import kr.brain.our_app.bookmark.dto.BookmarkDto;
 import kr.brain.our_app.bookmark.dto.RequestFrontDto;
 import kr.brain.our_app.bookmark.dto.TagBookmarkDto;
 import kr.brain.our_app.bookmark.service.BookmarkService;
 import kr.brain.our_app.bookmark.service.TagBookmarkService;
 import kr.brain.our_app.tag.service.TagService;
+import kr.brain.our_app.user.dto.UserDto;
 import kr.brain.our_app.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -55,6 +57,23 @@ public class TagBookmarkController {
         //TODO 반환 방식에 대한 회의 필요 tag -> bookmarkName or bookmarkURL or show all of them
         return ResponseEntity.ok(bookmarkDtos);
     }
+
+    //검색창 최초 접속 시 가지고 있는 모든 bookmark를 출력하도록한다.
+    @GetMapping("/onloadsearch")
+    public List<BookmarkDto> listBookmarksOnSearchLoad(@RequestBody String Userid) {
+        UserDto dto = userService.findById(Userid);
+        List<BookmarkDto> bookmarks = bookmarkService.findAllBookmarks(dto);
+        return bookmarks;
+    }
+
+//    //word를 tag에서 검색해서
+//    @GetMapping("/search")
+//    public ResponseEntity<List<TagBookmarkDto>> searchTagBookmark(@RequestParam String word, @RequestParam String Email) {
+//        String userid = userService.findByEmail(Email).getId(); // 예외처리 할 필요 x 이미 로그인O, 잘못들어올리X
+//
+//    }
+
+
 
     // 1. TagBookmark 생성
 //    @PostMapping
