@@ -211,6 +211,15 @@ public class TagBookmarkService {
                 .collect(Collectors.toList());
     }
 
+    List<TagBookmarkDto> findByBookmarkId(String bookmarkId){
+        return tagBookmarkRepository.findByBookmarkId(bookmarkId).stream()
+                .map(tagBookmark -> TagBookmarkDto.builder()
+                        .tagId(tagBookmark.getTag().getId())
+                        .bookmarkId(tagBookmark.getBookmark().getId())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     public boolean existsByTagIdAndBookmarkId(String tagId, String bookmarkId){
         return tagBookmarkRepository.existsByTagIdAndBookmarkId(tagId, bookmarkId);
     }
@@ -225,6 +234,30 @@ public class TagBookmarkService {
         BookmarkDto bookmarkDto = bookmarkService.findByBookmarkName(bookmarkName,currentUserDto);
         return bookmarkDto;
     }
+
+    public List<TagDto> findTagsByBookmarkName(String bookmarkName, String userId) {
+        if (bookmarkService.existsByBookmarkName(bookmarkName, userId)) {
+            UserDto userDto = userService.findById(userId);
+            BookmarkDto bookmarkDto = bookmarkService.findByBookmarkName(bookmarkName, userDto);
+
+            List<TagBookmarkDto> tagBookmarkDtos = tagBookmarkRepository.findByBookmarkId(bookmarkDto.getId())
+                    .stream()
+                    .map(tagBookmark -> TagBookmarkDto.builder()
+                            .bookmarkId(tagBookmark.getBookmark().getId()) // 올바른 bookmarkId
+                            .tagId(tagBookmark.getTag().getId()) // 올바른 tagId
+                            .build())
+                    .toList();
+
+            List<TagDto> tagDtos = new ArrayList<>();
+            for (TagBookmarkDto tbd : tagBookmarkDtos) {
+                tagDtos.add(tagService.findById(tbd.getTagId())); // 정확한 TagDto 조회
+            }
+            return tagDtos;
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
 
     // TagName을 입력받고 해당 tag에 속하는 bookmark들을 모두 출력하는 메서드
     public List<BookmarkDto> findBookmarksByTagName(String tagName, String userId) {
