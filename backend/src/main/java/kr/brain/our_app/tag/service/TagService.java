@@ -68,8 +68,8 @@ public class TagService {
     }
 
     // 3. tagName 으로 태그 조회 (userdto에 담긴 id로 사용자 식별)
-    public TagDto findByTagName(String tagName, UserDto userDto) {
-        return tagRepository.findByTagNameAndUser_Id(tagName, userDto.getId())
+    public TagDto findByTagName(String tagName, String userid) {
+        return tagRepository.findByTagNameAndUser_Id(tagName, userid)
                 .map(tag -> TagDto.builder()
                         .id(tag.getId())
                         .tagName(tag.getTagName())

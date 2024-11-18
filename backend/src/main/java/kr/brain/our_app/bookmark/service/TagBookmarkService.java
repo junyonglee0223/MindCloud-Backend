@@ -93,7 +93,7 @@ public class TagBookmarkService {
                 tagService.createTag(tagDto, userDto);
             }
             TagDto checkedTagDto
-                    = tagService.findByTagName(tagName, userDto);
+                    = tagService.findByTagName(tagName, userDto.getId());
 //                    .orElseThrow(IllegalArgumentException::new);
             //service 내에서 예외처리하면서 삭제함
             //entity check -> create dto
@@ -120,7 +120,7 @@ public class TagBookmarkService {
 
         UserDto userDto = UserDto.builder()
                 .id(userID).build();
-        String tagId = tagService.findByTagName(tagName, userDto).getId();
+        String tagId = tagService.findByTagName(tagName, userDto.getId()).getId();
         List<TagBookmarkDto> tagBookmarkDtos = findByTagId(tagId);
 
         List<BookmarkDto> bookmarkDtos = new ArrayList<>();
@@ -264,7 +264,7 @@ public class TagBookmarkService {
         if (tagService.existsByTagName(tagName, userId)) { // Tag가 존재하는지 확인
             // UserDto와 TagDto를 가져옵니다.
             UserDto userDto = userService.findById(userId);
-            TagDto tagDto = tagService.findByTagName(tagName, userDto);
+            TagDto tagDto = tagService.findByTagName(tagName, userDto.getId());
 
             // tagName에 해당하는 TagBookmarks를 가져옵니다.
             List<TagBookmark> tagBookmarks = tagBookmarkRepository.
