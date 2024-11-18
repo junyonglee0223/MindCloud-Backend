@@ -36,9 +36,7 @@ public class TagBookmarkService {
     public TagBookmarkService(TagBookmarkRepository tagBookmarkRepository,
                               BookmarkService bookmarkService,
                               TagService tagService,
-
                               UserService userService,
-
                               TagRepository tagRepository,
                               BookmarkRepository bookmarkRepository) {
         this.tagBookmarkRepository = tagBookmarkRepository;
@@ -112,6 +110,7 @@ public class TagBookmarkService {
 
 
     //tag 요청했을 경우 bookmarkDto 반환하는 서비스 로직
+    //이거는 search service의 searchByword 함수가 대체하고 있다. 지워도 될 것 같지만 남겨둔다.
     public List<BookmarkDto> responseTagBookmark(String tagName, String userEmail){
         String userID = userService.findByEmail(userEmail).getId();
 
@@ -131,9 +130,8 @@ public class TagBookmarkService {
         return bookmarkDtos;
     }
 
-
-    public TagBookmarkDto findTagBookmarkByTagAndBookmark(
-            TagDto tagDto, BookmarkDto bookmarkDto
+    //tag랑 bookmark로 tagbookmark 객체 찾기
+    public TagBookmarkDto findTagBookmarkByTagAndBookmark(TagDto tagDto, BookmarkDto bookmarkDto
     ){
         if(!tagService.existsById(tagDto.getId()) || !bookmarkService.existsById(bookmarkDto.getId())){
             throw new IllegalArgumentException("Tag or Bookmark does not exist");
@@ -225,6 +223,7 @@ public class TagBookmarkService {
     }
 
     //FIXME 리턴 방식 다시 생각해봐야함
+    //bookmark name과 userid로
     public BookmarkDto searchBookmarkByBookmarkName(String bookmarkName , String userId) {
         // 사용자가 검색란에 bookmarkname을 입력, bookmarkdto 반환front에서 userId를 쏴준 상황
         if(!bookmarkService.existsByBookmarkName(bookmarkName,userId)){

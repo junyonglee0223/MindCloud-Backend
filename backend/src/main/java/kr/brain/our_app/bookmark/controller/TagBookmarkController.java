@@ -9,6 +9,7 @@ import kr.brain.our_app.bookmark.service.BookmarkService;
 import kr.brain.our_app.bookmark.service.TagBookmarkService;
 import kr.brain.our_app.tag.service.TagService;
 import kr.brain.our_app.user.dto.UserDto;
+import kr.brain.our_app.tag.dto.TagDto;
 import kr.brain.our_app.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -16,10 +17,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/tagbookmark")
-@CrossOrigin(origins = "chrome-extension://jdceomhmccgnolblojlknlhopaoikoda")  // Chrome 확장 프로그램의 origin 추가
+@CrossOrigin(origins = "chrome-extension://nmppigpifceknpehjphklpnpofimlmea/")  // Chrome 확장 프로그램의 origin 추가
 public class TagBookmarkController {
 
     private final TagBookmarkService tagBookmarkService;
