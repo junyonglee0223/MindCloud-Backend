@@ -36,9 +36,7 @@ public class TagBookmarkService {
     public TagBookmarkService(TagBookmarkRepository tagBookmarkRepository,
                               BookmarkService bookmarkService,
                               TagService tagService,
-
                               UserService userService,
-
                               TagRepository tagRepository,
                               BookmarkRepository bookmarkRepository) {
         this.tagBookmarkRepository = tagBookmarkRepository;
@@ -93,7 +91,7 @@ public class TagBookmarkService {
                 tagService.createTag(tagDto, userDto);
             }
             TagDto checkedTagDto
-                    = tagService.findByTagName(tagName, userDto);
+                    = tagService.findByTagName(tagName, userDto.getId());
 //                    .orElseThrow(IllegalArgumentException::new);
             //service 내에서 예외처리하면서 삭제함
             //entity check -> create dto
@@ -112,6 +110,7 @@ public class TagBookmarkService {
 
 
     //tag 요청했을 경우 bookmarkDto 반환하는 서비스 로직
+    //이거는 search service의 searchByword 함수가 대체하고 있다. 지워도 될 것 같지만 남겨둔다.
     public List<BookmarkDto> responseTagBookmark(String tagName, String userEmail){
         String userID = userService.findByEmail(userEmail).getId();
 
@@ -120,7 +119,7 @@ public class TagBookmarkService {
 
         UserDto userDto = UserDto.builder()
                 .id(userID).build();
-        String tagId = tagService.findByTagName(tagName, userDto).getId();
+        String tagId = tagService.findByTagName(tagName, userDto.getId()).getId();
         List<TagBookmarkDto> tagBookmarkDtos = findByTagId(tagId);
 
         List<BookmarkDto> bookmarkDtos = new ArrayList<>();
@@ -131,9 +130,8 @@ public class TagBookmarkService {
         return bookmarkDtos;
     }
 
-
-    public TagBookmarkDto findTagBookmarkByTagAndBookmark(
-            TagDto tagDto, BookmarkDto bookmarkDto
+    //tag랑 bookmark로 tagbookmark 객체 찾기
+    public TagBookmarkDto findTagBookmarkByTagAndBookmark(TagDto tagDto, BookmarkDto bookmarkDto
     ){
         if(!tagService.existsById(tagDto.getId()) || !bookmarkService.existsById(bookmarkDto.getId())){
             throw new IllegalArgumentException("Tag or Bookmark does not exist");
@@ -211,11 +209,21 @@ public class TagBookmarkService {
                 .collect(Collectors.toList());
     }
 
+    List<TagBookmarkDto> findByBookmarkId(String bookmarkId){
+        return tagBookmarkRepository.findByBookmarkId(bookmarkId).stream()
+                .map(tagBookmark -> TagBookmarkDto.builder()
+                        .tagId(tagBookmark.getTag().getId())
+                        .bookmarkId(tagBookmark.getBookmark().getId())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     public boolean existsByTagIdAndBookmarkId(String tagId, String bookmarkId){
         return tagBookmarkRepository.existsByTagIdAndBookmarkId(tagId, bookmarkId);
     }
 
     //FIXME 리턴 방식 다시 생각해봐야함
+    //bookmark name과 userid로
     public BookmarkDto searchBookmarkByBookmarkName(String bookmarkName , String userId) {
         // 사용자가 검색란에 bookmarkname을 입력, bookmarkdto 반환front에서 userId를 쏴준 상황
         if(!bookmarkService.existsByBookmarkName(bookmarkName,userId)){
@@ -226,12 +234,36 @@ public class TagBookmarkService {
         return bookmarkDto;
     }
 
+    public List<TagDto> findTagsByBookmarkName(String bookmarkName, String userId) {
+        if (bookmarkService.existsByBookmarkName(bookmarkName, userId)) {
+            UserDto userDto = userService.findById(userId);
+            BookmarkDto bookmarkDto = bookmarkService.findByBookmarkName(bookmarkName, userDto);
+
+            List<TagBookmarkDto> tagBookmarkDtos = tagBookmarkRepository.findByBookmarkId(bookmarkDto.getId())
+                    .stream()
+                    .map(tagBookmark -> TagBookmarkDto.builder()
+                            .bookmarkId(tagBookmark.getBookmark().getId()) // 올바른 bookmarkId
+                            .tagId(tagBookmark.getTag().getId()) // 올바른 tagId
+                            .build())
+                    .toList();
+
+            List<TagDto> tagDtos = new ArrayList<>();
+            for (TagBookmarkDto tbd : tagBookmarkDtos) {
+                tagDtos.add(tagService.findById(tbd.getTagId())); // 정확한 TagDto 조회
+            }
+            return tagDtos;
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
+
     // TagName을 입력받고 해당 tag에 속하는 bookmark들을 모두 출력하는 메서드
     public List<BookmarkDto> findBookmarksByTagName(String tagName, String userId) {
         if (tagService.existsByTagName(tagName, userId)) { // Tag가 존재하는지 확인
             // UserDto와 TagDto를 가져옵니다.
             UserDto userDto = userService.findById(userId);
-            TagDto tagDto = tagService.findByTagName(tagName, userDto);
+            TagDto tagDto = tagService.findByTagName(tagName, userDto.getId());
 
             // tagName에 해당하는 TagBookmarks를 가져옵니다.
             List<TagBookmark> tagBookmarks = tagBookmarkRepository.
@@ -254,7 +286,6 @@ public class TagBookmarkService {
             return Collections.emptyList();
         }
     }
-
 
 //    public List<TagBookmarkDto> findAllByTag(TagDto tagDto) {
 //        // TagDto의 정보를 바탕으로 Tag 엔티티 조회

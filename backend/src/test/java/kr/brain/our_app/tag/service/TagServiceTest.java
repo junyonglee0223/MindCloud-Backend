@@ -127,7 +127,7 @@ class TagServiceTest {
         tagService.createTag(tagDto, userDto);
 
         // 이름으로 태그 조회
-        TagDto foundTag = tagService.findByTagName(tagDto.getTagName(),userDto);
+        TagDto foundTag = tagService.findByTagName(tagDto.getTagName(),userDto.getId());
 
         // 검증
         assertThat(foundTag).isNotNull();
