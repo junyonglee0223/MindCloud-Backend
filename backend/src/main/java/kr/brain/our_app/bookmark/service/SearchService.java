@@ -4,6 +4,7 @@ import kr.brain.our_app.bookmark.domain.Bookmark;
 import kr.brain.our_app.bookmark.domain.TagBookmark;
 import kr.brain.our_app.bookmark.dto.BookmarkDto;
 import kr.brain.our_app.bookmark.dto.BookmarkWithTagsDto;
+import kr.brain.our_app.bookmark.dto.ModifyDto;
 import kr.brain.our_app.bookmark.dto.SearchDto;
 import kr.brain.our_app.bookmark.repository.TagBookmarkRepository;
 import kr.brain.our_app.idsha.IDGenerator;
@@ -14,6 +15,7 @@ import kr.brain.our_app.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.awt.print.Book;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,7 +41,8 @@ public class SearchService {
     //FIXME 나중에 bookmark, tagbookmark, tag service에서 userid or userDto 들어오는거 통일해야함 지금 엉망진창
     public SearchDto searchByWord(String word, String email) {
         UserDto userDto = userService.findByEmail(email);
-        String userId = IDGenerator.generateId(userDto.getEmail());
+        String userId = userDto.getId();
+        //FIXME  getid가져오기
 
         // **1. 태그 기반 북마크 검색**
         List<BookmarkWithTagsDto> tagBasedResults = new ArrayList<>();
@@ -94,4 +97,43 @@ public class SearchService {
                 .bookmarkResults(nameBasedResults)
                 .build();
     }
+
+    public void deleteBookmarkInSearch(String bookmarkName, String email) {
+        UserDto userDto = userService.findByEmail(email);
+        String bookmarkId = bookmarkService.findByBookmarkName(bookmarkName, userDto).getId();
+        bookmarkService.deleteBookmark(bookmarkId);
+    }
+
+    public BookmarkWithTagsDto modifyBWTD(ModifyDto modifydto){
+        String userId = userService.findByEmail(modifydto.getEmail()).getId();
+        UserDto userDto = userService.findById(userId);
+
+        if(bookmarkService.existsByBookmarkName(modifydto.getPreBookmarkName(), userId)){
+            deleteBookmarkInSearch(modifydto.getPreBookmarkName(), userId);
+        }//기존에 저장된 bookmarkid가 있는 경우 true이므로, 삭제한 후 create
+
+        BookmarkDto bookmarkDto = BookmarkDto.builder()
+                .bookmarkName(modifydto.getBookmarkWithTagsDto().getBookmarkName())
+                .url(modifydto.getBookmarkWithTagsDto().getUrl())
+                .build();
+        BookmarkDto newbookmarkDto = bookmarkService.createBookmark(bookmarkDto, userDto);
+        //bookmark 생성
+
+        modifydto.getBookmarkWithTagsDto().getTags().forEach(tag -> {
+            TagDto tagDto = TagDto.builder()
+                    .tagName(tag)
+                    .build();
+            TagDto newtagDto = tagService.createTag(tagDto, userDto);
+            tagBookmarkService.createTagBookmark(newtagDto.getId(), newbookmarkDto.getId(), userId);
+        });
+        //tag들 생성 + tagbookmark 생성 동시에 함
+
+        return BookmarkWithTagsDto.builder()
+                .bookmarkName(newbookmarkDto.getBookmarkName())
+                .url(newbookmarkDto.getUrl())
+                .tags(modifydto.getBookmarkWithTagsDto().getTags())
+                .build();
+    }
+    //bookmark → tag → tagbookmark 생성 후 return 할때 bookmarkwithtagdto를 반환하면 됨.
+
 }
