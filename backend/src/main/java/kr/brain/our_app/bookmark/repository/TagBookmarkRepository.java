@@ -44,7 +44,5 @@ public interface TagBookmarkRepository extends JpaRepository<TagBookmark, String
 //    List<Bookmark> findBookmarkByTagName(Tag tag);
 //
 //    //repository 전반적으로 수정.
-//
-//    // 1.
 
 }

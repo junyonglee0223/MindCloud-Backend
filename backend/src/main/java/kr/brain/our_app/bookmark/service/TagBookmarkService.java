@@ -154,7 +154,7 @@ public class TagBookmarkService {
         // 4. id가 들어오는지 name인지 모르긴 하지만 일단 id로 두는걸로
 
         if (tagBookmarkRepository.existsByTagIdAndBookmarkId(tagId, bookmarkId)) {
-            throw new IllegalArgumentException("This TagBookmark already exists with tagId: " + tagId + " and bookmarkId: " + bookmarkId);
+            return null;
         }
         UserDto currentUserDto = userService.findById(userId);
 
@@ -234,6 +234,7 @@ public class TagBookmarkService {
         return bookmarkDto;
     }
 
+    //bookmarkname으로 bookmark가 가지고 있는 태그들 뽑아내는 메서드 -> tagdto 형식으로 반환. 다양하게 사용 가능
     public List<TagDto> findTagsByBookmarkName(String bookmarkName, String userId) {
         if (bookmarkService.existsByBookmarkName(bookmarkName, userId)) {
             UserDto userDto = userService.findById(userId);
