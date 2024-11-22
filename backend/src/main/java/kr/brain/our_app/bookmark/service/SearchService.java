@@ -39,7 +39,7 @@ public class SearchService {
     //FIXME 나중에 bookmark, tagbookmark, tag service에서 userid or userDto 들어오는거 통일해야함 지금 엉망진창
     public SearchDto searchByWord(String word, String email) {
         UserDto userDto = userService.findByEmail(email);
-        String userId = IDGenerator.generateId(userDto.getEmail());
+        String userId = userDto.getId();
 
         // **1. 태그 기반 북마크 검색**
         List<BookmarkWithTagsDto> tagBasedResults = new ArrayList<>();
