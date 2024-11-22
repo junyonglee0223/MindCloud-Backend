@@ -3,12 +3,17 @@ package kr.brain.our_app.idsha;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class IDGenerator {
     public static String generateId(String code){
         try{
+            String currentTime = getCurrentTime();
+            String input = code + currentTime;
+
             MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = messageDigest.digest(code.getBytes(StandardCharsets.UTF_8));
+            byte[] hashBytes = messageDigest.digest(input.getBytes(StandardCharsets.UTF_8));
             return bytesToHex(hashBytes);
         }catch (NoSuchAlgorithmException e){
             throw new RuntimeException("SHA-256 algorithm not available", e);
@@ -22,5 +27,10 @@ public class IDGenerator {
             retString.append(hex);
         }
         return retString.toString();
+    }
+    private static String getCurrentTime(){
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
+        return now.format(formatter);
     }
 }
