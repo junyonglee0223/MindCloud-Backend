@@ -1,5 +1,6 @@
 package kr.brain.our_app.bookmark.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import kr.brain.our_app.bookmark.domain.Bookmark;
 import kr.brain.our_app.bookmark.domain.TagBookmark;
@@ -64,6 +65,73 @@ public class TagBookmarkControllerTest {
                 .build();
         tagBookmarkService.requestTagBookmark(requestFrontDto);
     }
+
+    @Test
+    void testSendTagBookmarksFromRequest() throws Exception {
+        // Given: 테스트 사용자 이메일
+        String userEmail = "testuser@example.com";
+
+        // When: /outAll 요청
+        MvcResult mvcResult = mockMvc.perform(get("/api/tagbookmark/outAll")
+                        .param("userEmail", userEmail)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk()) // HTTP 200 OK 응답 확인
+                .andReturn();
+
+        // Then: 응답 데이터 출력
+        String jsonResponse = mvcResult.getResponse().getContentAsString();
+        System.out.println("응답 JSON 데이터: " + jsonResponse);
+
+        // JSON 데이터를 Java 객체로 변환
+        ObjectMapper objectMapper = new ObjectMapper();
+        RequestFrontDto[] responseArray = objectMapper.readValue(jsonResponse, RequestFrontDto[].class); // 배열로 변환
+        List<RequestFrontDto> responseDtos = Arrays.asList(responseArray); // 배열을 리스트로 변환
+
+        // 데이터 검증
+        assertThat(responseDtos).isNotEmpty(); // 데이터가 비어있지 않은지 확인
+        responseDtos.forEach(dto -> {
+            System.out.println("Title: " + dto.getTitle());
+            System.out.println("URL: " + dto.getUrl());
+            System.out.println("Tags: " + dto.getTags());
+            System.out.println("----");
+        });
+    }
+
+
+    @Test
+    void testSendTagBookmarksWithSpecificTag() throws Exception {
+        // Given: 테스트 사용자 이메일과 태그명
+        String userEmail = "testuser@example.com";
+        String tagName = "SampleTag1";
+
+        // When: /out 요청
+        MvcResult mvcResult = mockMvc.perform(get("/api/tagbookmark/out")
+                        .param("tagName", tagName)
+                        .param("userEmail", userEmail)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk()) // HTTP 200 OK 응답 확인
+                .andReturn();
+
+        // Then: 응답 데이터 출력
+        String jsonResponse = mvcResult.getResponse().getContentAsString();
+        System.out.println("응답 JSON 데이터: " + jsonResponse);
+
+        // JSON 데이터를 Java 객체로 변환
+        ObjectMapper objectMapper = new ObjectMapper();
+        RequestFrontDto[] responseArray = objectMapper.readValue(jsonResponse, RequestFrontDto[].class); // 배열로 변환
+        List<RequestFrontDto> responseDtos = Arrays.asList(responseArray); // 배열을 리스트로 변환
+
+        // 데이터 검증
+        assertThat(responseDtos).isNotEmpty(); // 데이터가 비어있지 않은지 확인
+        responseDtos.forEach(dto -> {
+            System.out.println("Title: " + dto.getTitle());
+            System.out.println("URL: " + dto.getUrl());
+            System.out.println("Tags: " + dto.getTags());
+            System.out.println("----");
+        });
+    }
+
+
     @Test
     void testResponseTagBookmark() throws Exception {
         //request 2 setting
@@ -129,46 +197,4 @@ public class TagBookmarkControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
         );
     }
-//
-//    @Test
-//    public void testCreateTagBookmark() throws Exception {
-//        when(tagRepository.findById(any(Long.class))).thenReturn(Optional.of(tag));
-//        when(tagBookmarkService.createTagBookmark(any(Tag.class), any(Bookmark.class))).thenReturn(tagBookmark);
-//
-//        mockMvc.perform(post("/api/bookmarks/tags")
-//                        .param("tagId", "1")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content("{\"url\": \"http://example.com\"}"))
-//                .andExpect(status().isOk())
-//                .andExpect(content().string(containsString("http://example.com")));
-//    }
-//
-//    @Test
-//    public void testGetBookmarksByTag() throws Exception {
-//        Pageable pageable = PageRequest.of(0, 10);
-//        when(tagRepository.findById(eq(1L))).thenReturn(Optional.of(tag));
-//        when(tagBookmarkService.getBookmarksByTag(any(Tag.class), any(Pageable.class)))
-//                .thenReturn(new PageImpl<>(Collections.singletonList(tagBookmark), pageable, 1));
-//
-//        mockMvc.perform(MockMvcRequestBuilders.get("/api/bookmarks/tags/1/bookmarks")
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andExpect(status().isOk());
-//    }
-//
-//    @Test
-//    public void testRemoveTagBookmark() throws Exception {
-//        when(tagRepository.findById(any(Long.class))).thenReturn(Optional.of(tag));
-//
-//        mockMvc.perform(MockMvcRequestBuilders.delete("/api/bookmarks/tags")
-//                        .param("tagId", "1")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content("{\"url\": \"http://example.com\"}"))
-//                .andExpect(status().isNoContent());
-//    }
-//
-//    @Test
-//    public void testDeleteAllTagBookmarks() throws Exception {
-//        mockMvc.perform(MockMvcRequestBuilders.delete("/api/bookmarks/tags/1/all-bookmarks"))
-//                .andExpect(status().isNoContent());
-//    }
 }

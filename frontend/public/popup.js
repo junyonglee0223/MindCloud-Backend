@@ -2,89 +2,36 @@ document.addEventListener('DOMContentLoaded', function() {
   const saveBookmarkBtn = document.getElementById('saveBookmarkBtn');
   const tagContainer = document.getElementById('tagContainer');
   const bookmarkList = document.getElementById('bookmarkList');
+  const goToSearchBtn = document.getElementById('goToSearchBtn');
 
-  // 북마크 저장 버튼 클릭 시 GPT API 호출 후 북마크 저장
-  saveBookmarkBtn.addEventListener('click', function() {
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-      const currentTab = tabs[0];
-      const bookmark = {
-        title: currentTab.title,
-        url: currentTab.url
-      };
-
-      // GPT API 호출하여 태그 생성
-      fetchGPTTags(bookmark.url, bookmark.title)
-        .then((tags) => {
-          bookmark.tags = tags.map(tag => tag.trim()); // GPT에서 생성된 태그를 깔끔하게 정리
-
-          // 기존 북마크 불러오기 및 새로운 북마크 저장
-          chrome.storage.sync.get({ bookmarks: [] }, function(data) {
-            const bookmarks = data.bookmarks;
-            bookmarks.push(bookmark);
-
-               // 백엔드로 북마크 데이터 전송
-          sendBookmarkToBackend(bookmark)
-          .then((response) => {
-            console.log('백엔드로 북마크 저장 완료:', response);
-
-            chrome.storage.sync.set({ bookmarks: bookmarks }, function() {
-              displayTags(); // 태그 목록 업데이트
-              displayBookmarks(bookmarks); // 북마크 목록 업데이트
-            });
-          })
-          .catch((error) => {
-              console.error('백엔드 저장 중 오류 발생:', error);
-          });
-          });
-        })
-        .catch((error) => {
-          console.error('GPT API 호출 중 오류 발생:', error);
-        });
-    });
+  // 검색 버튼 클릭 시 search.html로 이동
+  goToSearchBtn.addEventListener('click', function () {
+    window.location.href = 'search.html';
   });
 
-  // 백엔드로 북마크 데이터를 보내는 함수
-function sendBookmarkToBackend(bookmark) {
-  const backendUrl = "http://localhost:8080/api/tagbookmark/in"; // 백엔드 API URL
+  // "북마크 저장하기" 버튼 클릭 이벤트
+  saveBookmarkBtn.addEventListener('click', function () {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      const currentTab = tabs[0];
 
-  const userName = "test1";
-  const email = "test1@gmail.com";
- //사용자 이메일은 계속 보내는 방식으로 했어요
+      // GPT API 호출하여 태그 생성
+      fetchGPTTags(currentTab.url, currentTab.title)
+        .then((tags) => {
+          // 북마크 데이터 생성 및 팝업 열기
+          const bookmark = {
+            title: currentTab.title,
+            url: currentTab.url,
+            tags: tags, // GPT로 생성된 태그 추가
+          };
+          openEditPopup(bookmark); // edit-popup.js의 함수 호출
+        })
+        .catch((error) => {
+          console.error('태그 생성 중 오류 발생:', error);
+          alert('태그를 생성하는 데 문제가 발생했습니다. 다시 시도해주세요.');
+        });
+      });
+  });
 
-// RequestFrontDto 형식에 맞게 데이터 구성
-const requestFrontDto = {
-  title: bookmark.title,
-  url: bookmark.url,
-  tags: bookmark.tags,
-  userName: userName,  
-  email: email  
-};
-// 요청 전 로그 출력
-console.log('백엔드로 보낼 데이터:', requestFrontDto);
-
-return fetch(backendUrl, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestFrontDto),
-})
-.then(response => {
-    // 응답 상태 코드 확인
-    console.log('응답 상태 코드:', response.status);
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-})
-.then(data => {
-    console.log('백엔드로부터 응답 받음:', data);
-    return data;
-})
-.catch(error => {
-    console.error('백엔드로 데이터 전송 중 오류 발생:', error);
-});
-}
 
   function fetchGPTTags(url, title) {
     const apiKey = config.OPENAI_API_KEY;
@@ -134,19 +81,25 @@ return fetch(backendUrl, {
       tagContainer.innerHTML = ''; // 기존 태그 목록 초기화
       const colors = ['#FF6666', '#FFB266', '#FFFF66', '#B2FF66', '#66FF66', '#66FFB2']; // 버튼 색상 배열
       let colorIndex = 0; // 색상 인덱스 초기화
+      
+      const uniqueTags = new Set(); //중복 태그 방지
 
       bookmarks.forEach(bookmark => {
         bookmark.tags.forEach(tag => {
-          const tagElement = document.createElement('button'); // 버튼으로 변경
-          tagElement.className = 'tag';
-          tagElement.textContent = tag; // 태그 표시
-          tagElement.style.backgroundColor = colors[colorIndex]; // 버튼 색상 지정
-          tagElement.style.margin = '5px'; // 버튼 간격 지정
-          tagElement.addEventListener('click', function() {
-            filterBookmarksByTag(tag); // 태그 클릭 시 해당 북마크 필터링
-          });
-          tagContainer.appendChild(tagElement);
-          colorIndex = (colorIndex + 1) % colors.length; // 색상 인덱스 순환
+          if(!uniqueTags.has(tag)){
+            uniqueTags.add(tag);
+            
+            const tagElement = document.createElement('button'); // 버튼으로 변경
+            tagElement.className = 'tag';
+            tagElement.textContent = tag; // 태그 표시
+            tagElement.style.backgroundColor = colors[colorIndex]; // 버튼 색상 지정
+            tagElement.style.margin = '5px'; // 버튼 간격 지정
+            tagElement.addEventListener('click', function() {
+              filterBookmarksByTag(tag); // 태그 클릭 시 해당 북마크 필터링
+            });
+            tagContainer.appendChild(tagElement);
+            colorIndex = (colorIndex + 1) % colors.length; // 색상 인덱스 순환
+          }
         });
       });
     });
@@ -170,9 +123,36 @@ return fetch(backendUrl, {
     });
   }
 
-  // 초기화 시 태그 목록과 북마크 목록 표시
-  displayTags();
-  chrome.storage.sync.get({ bookmarks: [] }, function(data) {
-    displayBookmarks(data.bookmarks);
-  });
+  // // 초기화 시 태그 목록과 북마크 목록 표시
+  // displayTags();
+  // chrome.storage.sync.get({ bookmarks: [] }, function(data) {
+  //   displayBookmarks(data.bookmarks);
+  // });
+
+  
+    // 초기화 함수
+  function initializeData() {
+    const userEmail = "test1@gmail.com";
+    ///clear start-----------------
+    chrome.storage.sync.clear(function(){             
+        // 1. 백엔드에서 모든 북마크 가져오기
+        getAllBookmarksFromBackend(userEmail)
+          .then((bookmarks) => {
+            // 2. chrome.storage.sync에 북마크 저장
+            chrome.storage.sync.set({ bookmarks: bookmarks }, function () {
+              console.log("북마크가 chrome.storage.sync에 저장되었습니다:", bookmarks);
+    
+              // 3. 태그와 북마크 목록 표시
+              displayTags();
+              displayBookmarks(bookmarks);
+            });
+          })
+          .catch((error) => {
+            console.error("초기화 중 오류 발생:", error);
+          });
+    });
+    ///clear end-----------------------
+  }
+  window.initializeData = initializeData;
+  initializeData();
 });
