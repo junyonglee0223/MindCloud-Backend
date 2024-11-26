@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/search")
-@CrossOrigin(origins = "chrome-extension://hgmbkfajoaiepapbhdffjlfpcjbomejk/")  // Chrome 확장 프로그램의 origin 추가
 
 public class SearchController {
 

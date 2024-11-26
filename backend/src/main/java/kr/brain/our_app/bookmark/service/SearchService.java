@@ -42,7 +42,6 @@ public class SearchService {
     public SearchDto searchByWord(String word, String email) {
         UserDto userDto = userService.findByEmail(email);
         String userId = userDto.getId();
-        //FIXME  getid가져오기
 
         // **1. 태그 기반 북마크 검색**
         List<BookmarkWithTagsDto> tagBasedResults = new ArrayList<>();
@@ -125,8 +124,8 @@ public class SearchService {
             TagDto tagDto = TagDto.builder()
                     .tagName(tag)
                     .build();
-            //TagDto newtagDto = tagService.createTag(tagDto, userDto) 이렇게 만드는게 조회를 더 많이하긴 하네
-            if(!tagService.existsByTagName(tagDto.getTagName(), userId)){
+
+            if(!tagService.existsByTagName(tagDto.getTagName(), userDto.getId())){
                 tagService.createTag(tagDto, userDto);
             }
             TagDto newtagDto = tagService.findByTagName(tagDto.getTagName(), userId);

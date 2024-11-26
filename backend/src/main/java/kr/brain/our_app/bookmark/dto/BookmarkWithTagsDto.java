@@ -9,7 +9,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-
+@ToString
 public class BookmarkWithTagsDto {
     private String bookmarkName;
     private String url;

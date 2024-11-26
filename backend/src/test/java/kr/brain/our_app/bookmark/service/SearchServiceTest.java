@@ -53,10 +53,8 @@
 //        user.setId(IDGenerator.generateId("user-id"));
 //        user.setUserName("test1");
 //        user.setEmail("sample1@gmail.com");
-//        userService.createUser(user);
+//        userService.save(user); // 엔티티 저장
 //        userId = user.getId();
-//
-//        //dto
 //
 //        // 태그 엔티티 생성
 //        Tag tag = new Tag();
