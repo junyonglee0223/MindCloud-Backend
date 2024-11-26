@@ -29,6 +29,11 @@ public class BookmarkService {
         // 유저 ID로 User 객체 조회
         UserDto findUserDto = userService.findById(userDto.getId());
 
+        if(existsByBookmarkName(bookmarkDto.getBookmarkName(), findUserDto.getId())){
+            throw new IllegalArgumentException("This BookmarkName already exists");
+        }
+        // 주석처리 해놔서 문제군
+
         //FIXME entity 변경 로직 추가 toEntity 메서드 추가 고려하는게 좋을 듯...
         User user = User.builder()
                 .id(findUserDto.getId())
@@ -38,10 +43,6 @@ public class BookmarkService {
 
         String createbookmarkId = IDGenerator.generateId(bookmarkDto.getBookmarkName()+user.getId());
         //user 객체를 전달해서 setUser(user) 전달x
-
-        if(existsById(createbookmarkId)) {
-            throw new IllegalArgumentException("Bookmark already exists");
-        }
 
         Bookmark bookmark = Bookmark.builder()
                 .id(createbookmarkId)
