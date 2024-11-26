@@ -32,7 +32,7 @@ public class TagService {
         User user = findUserDto.toEntity();
 
         if(tagRepository.existsByTagNameAndUser_Id(tagDto.getTagName(), userDto.getId())) {
-            throw new IllegalArgumentException("This TagName already exists.");
+            return null;
         }
 
         String createId = IDGenerator.generateId(tagDto.getTagName()+user.getId());
