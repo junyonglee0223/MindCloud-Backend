@@ -42,6 +42,9 @@ public class BookmarkService {
         if(existsById(createbookmarkId)) {
             throw new IllegalArgumentException("Bookmark already exists");
         }
+        if(existsByBookmarkName(bookmarkDto.getBookmarkName(), userDto.getId())){
+            throw new IllegalArgumentException("Bookmark already exists");
+        }
 
         Bookmark bookmark = Bookmark.builder()
                 .id(createbookmarkId)
