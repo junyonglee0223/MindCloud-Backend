@@ -104,17 +104,14 @@ public class SearchService {
     }
 
     public BookmarkWithTagsDto modifyBWTD(ModifyDto modifydto){
-//        String userId = userService.findByEmail(modifydto.getEmail()).getId();
-//        UserDto userDto = userService.findById(userId);
-
         UserDto userDto = userService.findByEmail(modifydto.getEmail());
         String userId = userDto.getId();
-//        //FIXME
-//        System.out.println(userDto);
+        //이렇게 작성하면 이중조회하지않고, 간편하고 직관적인 코드가 된다.
 
         if(bookmarkService.existsByBookmarkName(modifydto.getPreBookmarkName(), userId)){
             deleteBookmarkInSearch(modifydto.getPreBookmarkName(), userDto.getEmail());
         }//기존에 저장된 bookmarkid가 있는 경우 true이므로, 삭제한 후 create
+        //email 과 id를 혼동했군
 
         BookmarkDto bookmarkDto = BookmarkDto.builder()
                 .bookmarkName(modifydto.getBookmarkWithTagsDto().getBookmarkName())
@@ -133,7 +130,6 @@ public class SearchService {
             }
             TagDto newtagDto = tagService.findByTagName(tagDto.getTagName(), userId);
             tagBookmarkService.createTagBookmark(newtagDto.getId(), newbookmarkDto.getId(), userId);
-
         });
         //tag들 생성 + tagbookmark 생성 동시에 함
 
