@@ -57,6 +57,8 @@ public class SearchService {
             tagBasedResults = tagBookmarks.stream()
                     .map(tagBookmark -> {
                         Bookmark bookmark = tagBookmark.getBookmark();
+                        String imageUrl = s3Service.getFileUrl(bookmark.getBookmarkName(), userId);
+
 
                         // 해당 북마크에 연결된 모든 태그 가져오기
                         List<String> tags = bookmark.getTags().stream()
@@ -67,6 +69,7 @@ public class SearchService {
                                 .bookmarkName(bookmark.getBookmarkName())
                                 .url(bookmark.getUrl())
                                 .tags(tags)
+                                .imageUrl(imageUrl)
                                 .build();
                     })
                     .collect(Collectors.toList());
@@ -76,6 +79,8 @@ public class SearchService {
         List<BookmarkWithTagsDto> nameBasedResults = new ArrayList<>();
         if (bookmarkService.existsByBookmarkName(word, userId)) {
             BookmarkDto bookmarkDto = bookmarkService.findByBookmarkName(word, userDto);
+
+            String imageUrl = s3Service.getFileUrl(bookmarkDto.getBookmarkName(), userId);
 
             // 해당 북마크에 연결된 태그 가져오기
             List<String> tags = tagBookmarkService.findTagsByBookmarkName(bookmarkDto.getBookmarkName(),userId)
@@ -88,6 +93,7 @@ public class SearchService {
                     .bookmarkName(bookmarkDto.getBookmarkName())
                     .url(bookmarkDto.getUrl())
                     .tags(tags)
+                    .imageUrl(imageUrl)
                     .build();
 
             nameBasedResults.add(result);
