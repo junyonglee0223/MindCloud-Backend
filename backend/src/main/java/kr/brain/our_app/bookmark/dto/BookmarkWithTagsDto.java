@@ -14,4 +14,5 @@ public class BookmarkWithTagsDto {
     private String bookmarkName;
     private String url;
     private List<String> tags;
+    private String imageUrl;
 }

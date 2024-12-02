@@ -8,6 +8,7 @@ import kr.brain.our_app.bookmark.dto.ModifyDto;
 import kr.brain.our_app.bookmark.dto.SearchDto;
 import kr.brain.our_app.bookmark.repository.TagBookmarkRepository;
 import kr.brain.our_app.idsha.IDGenerator;
+import kr.brain.our_app.image.service.S3Service;
 import kr.brain.our_app.tag.dto.TagDto;
 import kr.brain.our_app.tag.service.TagService;
 import kr.brain.our_app.user.dto.UserDto;
@@ -27,15 +28,17 @@ public class SearchService {
     private final TagBookmarkRepository tagBookmarkRepository;
     private final TagBookmarkService tagBookmarkService;
     private final UserService userService;
+    private final S3Service s3Service;
 
     @Autowired
     public SearchService(TagService tagService, BookmarkService bookmarkService, TagBookmarkRepository tagBookmarkRepository, UserService userService
-    , TagBookmarkService tagBookmarkService) {
+    , TagBookmarkService tagBookmarkService, S3Service s3Service) {
         this.tagService = tagService;
         this.bookmarkService = bookmarkService;
         this.tagBookmarkRepository = tagBookmarkRepository;
         this.userService = userService;
         this.tagBookmarkService = tagBookmarkService;
+        this.s3Service = s3Service;
     }
 
     //FIXME 나중에 bookmark, tagbookmark, tag service에서 userid or userDto 들어오는거 통일해야함 지금 엉망진창
@@ -54,6 +57,8 @@ public class SearchService {
             tagBasedResults = tagBookmarks.stream()
                     .map(tagBookmark -> {
                         Bookmark bookmark = tagBookmark.getBookmark();
+                        String imageUrl = s3Service.getFileUrl(bookmark.getBookmarkName(), userId);
+
 
                         // 해당 북마크에 연결된 모든 태그 가져오기
                         List<String> tags = bookmark.getTags().stream()
@@ -64,6 +69,7 @@ public class SearchService {
                                 .bookmarkName(bookmark.getBookmarkName())
                                 .url(bookmark.getUrl())
                                 .tags(tags)
+                                .imageUrl(imageUrl)
                                 .build();
                     })
                     .collect(Collectors.toList());
@@ -73,6 +79,8 @@ public class SearchService {
         List<BookmarkWithTagsDto> nameBasedResults = new ArrayList<>();
         if (bookmarkService.existsByBookmarkName(word, userId)) {
             BookmarkDto bookmarkDto = bookmarkService.findByBookmarkName(word, userDto);
+
+            String imageUrl = s3Service.getFileUrl(bookmarkDto.getBookmarkName(), userId);
 
             // 해당 북마크에 연결된 태그 가져오기
             List<String> tags = tagBookmarkService.findTagsByBookmarkName(bookmarkDto.getBookmarkName(),userId)
@@ -85,6 +93,7 @@ public class SearchService {
                     .bookmarkName(bookmarkDto.getBookmarkName())
                     .url(bookmarkDto.getUrl())
                     .tags(tags)
+                    .imageUrl(imageUrl)
                     .build();
 
             nameBasedResults.add(result);
@@ -101,6 +110,10 @@ public class SearchService {
         UserDto userDto = userService.findByEmail(email);
         String bookmarkId = bookmarkService.findByBookmarkName(bookmarkName, userDto).getId();
         bookmarkService.deleteBookmark(bookmarkId);
+
+        //s3 이미지 삭제
+        String fileName = bookmarkName.replaceAll("\\s+", "_") + "_" + userDto.getId() + ".jpg";
+        s3Service.deleteFile(fileName);
     }
 
     public BookmarkWithTagsDto modifyBWTD(ModifyDto modifydto){

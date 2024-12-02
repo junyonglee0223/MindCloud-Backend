@@ -44,6 +44,10 @@ public class BookmarkService {
         String createbookmarkId = IDGenerator.generateId(bookmarkDto.getBookmarkName()+user.getId());
         //user 객체를 전달해서 setUser(user) 전달x
 
+        if(existsByBookmarkName(bookmarkDto.getBookmarkName(), userDto.getId())){
+            throw new IllegalArgumentException("Bookmark already exists");
+        }
+
         Bookmark bookmark = Bookmark.builder()
                 .id(createbookmarkId)
                 .bookmarkName(bookmarkDto.getBookmarkName())

@@ -8,6 +8,7 @@ import kr.brain.our_app.bookmark.dto.TagBookmarkDto;
 import kr.brain.our_app.bookmark.repository.BookmarkRepository;
 import kr.brain.our_app.bookmark.repository.TagBookmarkRepository;
 import kr.brain.our_app.idsha.IDGenerator;
+import kr.brain.our_app.image.service.S3Service;
 import kr.brain.our_app.tag.domain.Tag;
 import kr.brain.our_app.tag.dto.TagDto;
 import kr.brain.our_app.tag.repository.TagRepository;
@@ -31,12 +32,14 @@ public class TagBookmarkService {
     private final BookmarkService bookmarkService;
     private final TagService tagService;
     private final UserService userService;
+    private final S3Service s3Service;
 
     @Autowired
     public TagBookmarkService(TagBookmarkRepository tagBookmarkRepository,
                               BookmarkService bookmarkService,
                               TagService tagService,
                               UserService userService,
+                              S3Service s3Service,
                               TagRepository tagRepository,
                               BookmarkRepository bookmarkRepository) {
         this.tagBookmarkRepository = tagBookmarkRepository;
@@ -44,6 +47,7 @@ public class TagBookmarkService {
         this.tagService = tagService;
 
         this.userService = userService;
+        this.s3Service = s3Service;
     }
 
     //WARN User 생성되는게 어디서 생성되는지 아직 몰라서 tagbookmark 컨트롤러에서 user 생성하는 걸로 두긴했는데,
@@ -75,6 +79,16 @@ public class TagBookmarkService {
 
         if(!bookmarkService.existsByBookmarkName(title, userDto.getId())){
             bookmarkService.createBookmark(bookmarkDto, userDto);
+
+            String imageUrl = null;
+            if(requestFrontDto.getImageUrl() != null){
+                try{
+                    imageUrl = requestFrontDto.getImageUrl();
+                    s3Service.uploadImageFromUrl(imageUrl, title, userDto.getId());
+                }catch (Exception e){
+                    System.out.println("s3 이미지 업로드 실패");
+                }
+            }
         }
 
         BookmarkDto checkedBookmarkDto
@@ -106,6 +120,37 @@ public class TagBookmarkService {
             tagBookmarkDtoList.add(checkedTagBookmarkDto);
         }
         return tagBookmarkDtoList;
+    }
+
+    public List<RequestFrontDto> responseAllTagBookmark(String userEmail){
+        UserDto userDto = userService.findByEmail(userEmail);
+        String userId = userDto.getId();
+
+        // 북마크 목록 조회
+        List<BookmarkDto> bookmarks = bookmarkService.findAllBookmarks(userDto);
+
+        // 태그 조회 및 DTO 생성
+        List<RequestFrontDto> responseDtos = bookmarks.stream()
+                .map(bookmark -> {
+                    // 각 북마크에 연결된 태그 조회
+                    List<String> tags = findTagsByBookmarkName(bookmark.getBookmarkName(), userId).stream()
+                            .map(TagDto::getTagName)
+                            .collect(Collectors.toList());
+                    String imageUrl = s3Service.getFileUrl(bookmark.getBookmarkName(), userId);
+
+                    // RequestFrontDto 생성
+                    return RequestFrontDto.builder()
+                            .title(bookmark.getBookmarkName())
+                            .url(bookmark.getUrl())
+                            .tags(tags)
+                            .imageUrl(imageUrl)
+                            .email(userEmail)
+                            .userName(userDto.getUserName())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return  responseDtos;
     }
 
 

@@ -45,6 +45,80 @@
 <!-- 회원가입 페이지로 이동하는 버튼 -->
 <button onclick="location.href='/tagbookmark'">Go to tagbookmark</button>
 
+<!-- S3 업로드 및 조회 -->
+<h3>S3 File Upload</h3>
+<form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" id="fileInput" name="file" />
+    <button type="button" onclick="uploadFile()">Upload</button>
+</form>
+
+<h3>S3 File List</h3>
+<button onclick="getFiles()">View Files</button>
+<ul id="fileList"></ul>
+
+<script>
+    async function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        try {
+            const response = await fetch('/api/s3/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const fileUrl = await response.text();
+            alert('File uploaded successfully: ' + fileUrl);
+        } catch (error) {
+            alert('File upload failed: ' + error);
+        }
+    }
+
+    async function getFiles() {
+        try {
+            const response = await fetch('/api/s3/files');
+            const files = await response.json();
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            files.forEach(file => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = file;
+                a.target = '_blank';
+                a.textContent = file;
+
+                // 삭제 버튼 추가
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.className = 'delete-button';
+                deleteButton.onclick = () => deleteFile(file);
+
+                li.appendChild(deleteButton);
+                li.appendChild(a);
+                fileList.appendChild(li);
+            });
+        } catch (error) {
+            alert('Failed to load files: ' + error);
+        }
+    }
+    async function deleteFile(fileUrl) {
+        try {
+            const fileName = fileUrl.split('/').pop(); // 파일 이름 추출
+            const response = await fetch(`/api/s3/delete/${fileName}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                alert('File deleted successfully');
+                getFiles(); // 파일 목록 갱신
+            } else {
+                alert('Failed to delete file');
+            }
+        } catch (error) {
+            alert('Error deleting file: ' + error);
+        }
+    }
+</script>
 
 </body>
 </html>
