@@ -122,6 +122,9 @@ public class SearchService {
         //이렇게 작성하면 이중조회하지않고, 간편하고 직관적인 코드가 된다.
 
         if(bookmarkService.existsByBookmarkName(modifydto.getPreBookmarkName(), userId)){
+            //s3 이미지 삭제
+            String fileName = modifydto.getBookmarkWithTagsDto().getBookmarkName().replaceAll("\\s+", "_") + "_" + userDto.getId() + ".jpg";
+            s3Service.deleteFile(fileName);
             deleteBookmarkInSearch(modifydto.getPreBookmarkName(), userDto.getEmail());
         }//기존에 저장된 bookmarkid가 있는 경우 true이므로, 삭제한 후 create
         //email 과 id를 혼동했군
@@ -132,6 +135,16 @@ public class SearchService {
                 .build();
         BookmarkDto newbookmarkDto = bookmarkService.createBookmark(bookmarkDto, userDto);
         //bookmark 생성
+
+        String imageUrl = modifydto.getBookmarkWithTagsDto().getImageUrl();
+        if(imageUrl != null){
+            try{
+                System.out.println(imageUrl);//test
+                s3Service.uploadImageFromUrl(imageUrl, bookmarkDto.getBookmarkName(), userDto.getId());
+            }catch (Exception e){
+                System.out.println("s3 이미지 업로드 실패");
+            }
+        }
 
         modifydto.getBookmarkWithTagsDto().getTags().forEach(tag -> {
             TagDto tagDto = TagDto.builder()
