@@ -22,8 +22,9 @@ public class Tag {
     @Column(name ="tag_id")
     private String id;
 
-    @NotEmpty
-    @Column(nullable = false, length = 25, unique = true)
+    //@NotEmpty
+    //@Column(nullable = false, length = 25, unique = true)
+    @Column
     private String tagName;
 
     @ManyToOne
